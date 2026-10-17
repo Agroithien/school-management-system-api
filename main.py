@@ -9,6 +9,8 @@ from database.models import School
 
 from sqlalchemy.orm import Session
 
+from pydantic import ValidationError
+
 
 Base.metadata.create_all(bind=engine) # this creates base table
 
@@ -41,24 +43,37 @@ def create_school(school_data: CreateSchool,
     
 
 # update schools
-@app.patch("/school/{school_id}", response_model=SchoolResponse)
-def update_school(school_id, db: Session = Depends(get_db), updated_school_data: UpdateSchool):
+@app.patch("/school/{school_id}")
+def update_school(school_id: int,
+                  updated_school_data: UpdateSchool,
+                  db: Session = Depends(get_db)):
     
     school = db.get(School, school_id)
     
     if school is None:
         raise HTTPException(status_code=404, detail="school not found please check the school id")
+ 
     
     
+    changes = updated_school_data.model_dump(exclude_unset=True)
+    
+    for fields, value in changes.items():
+        if value is None:
+            raise HTTPException(status_code=422, detail=f"{fields} cannot be empty")
+        
+        setattr(school, fields, value)
+    
+    
+    db.commit()
+    db.refresh(school)
        
     
-    return {"message": "update schools here"}
-
+    return school
 
 
 # list all schools
-@app.get("/schools/all", response_model=SchoolResponse)
-def list_schools(db: Session = Depends(get_db),):
+@app.get("/schools/all", response_model=list[SchoolResponse])
+def list_schools(db: Session = Depends(get_db)):
     return db.query(School).all()
 
 

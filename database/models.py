@@ -14,13 +14,15 @@ from database.db import Base
 
 
 class School(Base):
-    print("this school fun is called...")
     __tablename__ = "schools"
     
     id: Mapped[int] = mapped_column(primary_key=True, index=True, autoincrement=True)
     
     school_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    num_of_classes: Mapped[int] = mapped_column(nullable=False)
+    location: Mapped[str] = mapped_column(String(300), nullable=False)
     description: Mapped[str] = mapped_column(String(300), nullable=False)
+    
     
 
     
